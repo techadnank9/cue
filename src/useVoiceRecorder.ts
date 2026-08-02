@@ -1,7 +1,8 @@
 import { useCallback, useRef, useState } from "react";
 
 // Records mic audio via MediaRecorder and hands back an ArrayBuffer on stop.
-// Shared by the Fan Guide chat and the Show Console voice cascade.
+// Shared by the Fan Guide chat, the Show Console voice cascade, and the
+// floating global voice widget.
 export function useVoiceRecorder() {
   const [recording, setRecording] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,6 +35,14 @@ export function useVoiceRecorder() {
     }
   }, []);
 
+  const teardown = useCallback(() => {
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+    recorderRef.current = null;
+    setRecording(false);
+  }, []);
+
+  // Stop and return the recorded audio — the normal "done talking" path.
   const stop = useCallback((): Promise<ArrayBuffer | null> => {
     return new Promise((resolve) => {
       const recorder = recorderRef.current;
@@ -43,10 +52,7 @@ export function useVoiceRecorder() {
       }
       recorder.onstop = async () => {
         const blob = new Blob(chunksRef.current, { type: recorder.mimeType });
-        streamRef.current?.getTracks().forEach((t) => t.stop());
-        streamRef.current = null;
-        recorderRef.current = null;
-        setRecording(false);
+        teardown();
         if (blob.size === 0) {
           resolve(null);
           return;
@@ -55,15 +61,49 @@ export function useVoiceRecorder() {
       };
       recorder.stop();
     });
-  }, []);
+  }, [teardown]);
 
-  return { recording, start, stop, error };
+  // Stop and discard — the "stop" control, not "send".
+  const cancel = useCallback(() => {
+    const recorder = recorderRef.current;
+    if (!recorder) return;
+    recorder.onstop = null;
+    recorder.stop();
+    teardown();
+  }, [teardown]);
+
+  return { recording, start, stop, cancel, error };
 }
 
-export function playBase64Audio(base64: string) {
-  const audio = new Audio(`data:audio/mp3;base64,${base64}`);
-  void audio.play().catch(() => {
-    // Autoplay can be blocked before any user gesture — silently ignore,
-    // the text answer is already visible either way.
-  });
+// Manages a single <audio> element for Arlo's spoken replies: mute, stop,
+// and an isSpeaking flag so the UI can show "Arlo is speaking…" like a real
+// call rather than a chat bubble that happens to also make sound.
+export function useSpeaker() {
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [muted, setMuted] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const mutedRef = useRef(false);
+  mutedRef.current = muted;
+
+  const stop = useCallback(() => {
+    audioRef.current?.pause();
+    audioRef.current = null;
+    setIsSpeaking(false);
+  }, []);
+
+  const speak = useCallback(
+    (base64: string) => {
+      if (mutedRef.current) return;
+      stop();
+      const audio = new Audio(`data:audio/mp3;base64,${base64}`);
+      audioRef.current = audio;
+      audio.onended = () => setIsSpeaking(false);
+      audio.onpause = () => setIsSpeaking(false);
+      setIsSpeaking(true);
+      void audio.play().catch(() => setIsSpeaking(false));
+    },
+    [stop]
+  );
+
+  return { speak, stop, isSpeaking, muted, setMuted };
 }

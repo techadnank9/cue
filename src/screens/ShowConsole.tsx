@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
-import { playBase64Audio, useVoiceRecorder } from "../useVoiceRecorder";
+import { useSpeaker, useVoiceRecorder } from "../useVoiceRecorder";
 
 function ReadinessMeter({ score }: { score: number | undefined }) {
   const [display, setDisplay] = useState(score ?? 0);
@@ -57,6 +57,7 @@ export default function ShowConsole() {
   const updateTaskStatus = useMutation(api.mutations.updateTaskStatus);
   const heartbeat = useMutation(api.mutations.heartbeat);
   const { recording, start: startMic, stop: stopMic, error: micError } = useVoiceRecorder();
+  const speaker = useSpeaker();
   const [arloBusy, setArloBusy] = useState(false);
 
   useEffect(() => {
@@ -77,7 +78,7 @@ export default function ShowConsole() {
   const speakReply = async (text: string) => {
     try {
       const { audioBase64 } = await speak({ text });
-      if (audioBase64) playBase64Audio(audioBase64);
+      if (audioBase64) speaker.speak(audioBase64);
     } catch {
       // Text remains visible when speech playback is unavailable.
     }

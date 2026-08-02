@@ -51,8 +51,9 @@ export async function synthesizeSpeech(text: string): Promise<string | null> {
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
+        // "nova" reads as warm and friendly, female — the voice for Arlo.
         model: "tts-1",
-        voice: "onyx",
+        voice: "nova",
         input: text,
         response_format: "mp3",
       }),
