@@ -1,0 +1,82 @@
+@import "tailwindcss";
+
+:root {
+  --stage-black: #0e0f12;
+  --console-graphite: #1a1d22;
+  --gaff-silver: #c9cdd4;
+  --house-amber: #e8a33d;
+  --cue-green: #3fb984;
+  --fault-red: #e2564b;
+
+  color-scheme: dark;
+  background: var(--stage-black);
+  color: var(--gaff-silver);
+  font-family: "Inter", system-ui, "Segoe UI", Roboto, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100svh;
+  background: var(--stage-black);
+}
+
+#root {
+  min-height: 100svh;
+}
+
+.font-display {
+  font-family: "Oswald", "Arial Narrow", system-ui, sans-serif;
+  font-stretch: condensed;
+}
+
+.font-mono-console {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+:focus-visible {
+  outline: 2px solid var(--house-amber);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+@keyframes breathe {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.88; }
+}
+
+@keyframes flare {
+  0% { box-shadow: 0 0 0 0 rgba(232, 163, 61, 0.55); }
+  100% { box-shadow: 0 0 0 24px rgba(232, 163, 61, 0); }
+}
+
+.meter-breathe {
+  animation: breathe 3.2s ease-in-out infinite;
+}
+
+.meter-flare {
+  animation: flare 0.9s ease-out;
+}
+
+@keyframes slide-in {
+  from { transform: translateY(-6px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.issue-enter {
+  animation: slide-in 0.25s ease-out;
+}
