@@ -11,11 +11,11 @@ const LEVEL_COLOR: Record<string, string> = {
 };
 
 const ZONE_ICON: Record<string, string> = {
-  entry: "⛩",
-  stage: "♪",
-  backstage: "▤",
-  green_room: "◍",
-  foh: "◈",
+  entry: "🚪",
+  stage: "🎤",
+  backstage: "🎪",
+  green_room: "🛋️",
+  foh: "🎚️",
   restroom: "🚻",
   food_drink: "🍔",
 };
