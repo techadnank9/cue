@@ -340,30 +340,37 @@ export const removeKeyboardPlayer = internalMutation({
 
 // ---------- Seed / reset (keeps the demo bulletproof) ----------
 
+// Real headliner + venue pulled via the JamBase MCP server (Musikfest 2026,
+// Wind Creek Steel Stage at PNC Plaza, jambase:16253409 — see
+// convex/backstage.ts, same event as the Festival Ops seed) so Show Console
+// and Festival Ops describe the same real show instead of two fake ones.
 const SEED_SHOW = {
-  name: "Golden Gate Stage — Saturday",
-  artist: "The Foglights",
-  venue: "Golden Gate Stage",
+  name: "Musikfest — Wind Creek Steel Stage, Saturday",
+  artist: "Third Eye Blind",
+  venue: "Wind Creek Steel Stage at PNC Plaza",
   venueChannelCapacity: 16,
-  date: new Date().toISOString().slice(0, 10),
+  jambaseEventId: "jambase:16253409",
+  date: "2026-07-31",
 };
 
+// Third Eye Blind's touring lineup (public touring credits) — real names in
+// the real instrument slots the flagship channel-capacity conflict checks.
 const SEED_BAND_MEMBERS = [
-  { name: "Vocalist", instrument: "Vocals", inputs: ["Vox"], available: true },
+  { name: "Stephan Jenkins", instrument: "Vocals", inputs: ["Vox"], available: true },
   {
-    name: "Guitarist",
+    name: "Kryz Reid",
     instrument: "Guitar",
     inputs: ["Gtr", "Gtr Amp Mic"],
     available: true,
   },
   {
-    name: "Bassist",
+    name: "Alex LeCavalier",
     instrument: "Bass",
     inputs: ["Bass DI", "Bass Amp"],
     available: true,
   },
   {
-    name: "Keyboardist",
+    name: "Alex Kopp",
     instrument: "Keyboard",
     inputs: ["Kbd L", "Kbd R", "Aux Synth"],
     available: true,
