@@ -207,8 +207,8 @@ async function seed(ctx: any) {
   }
 
   const festivalId = await ctx.db.insert("festivals", {
-    name: "Golden Gate Stage — Saturday",
-    date: new Date().toISOString().slice(0, 10),
+    name: "Musikfest — Bethlehem, PA",
+    date: "2026-07-31",
   });
 
   const zoneDefs = [
@@ -241,30 +241,35 @@ async function seed(ctx: any) {
   const setTime = (offsetMin: number) =>
     new Date(now.getTime() + offsetMin * 60_000).toISOString();
 
+  // Real headliners for Musikfest 2026 (Wind Creek Steel Stage at PNC Plaza,
+  // Bethlehem PA, 2026-07-31), pulled live via the JamBase MCP server
+  // (searchFestivals / getEvent — jambase:16253409). JamBase's REST API isn't
+  // reachable from a deployed Convex action (see HANDOFF.md), so this lineup
+  // is a one-time real-data seed rather than a live poll.
   const artistDefs = [
     {
-      name: "The Foglights",
+      name: "Third Eye Blind",
       stageZoneId: zoneIds["Main Stage"],
       entryZoneId: zoneIds["Main Gate"],
       setTime: setTime(90),
       status: "soundcheck" as const,
     },
     {
-      name: "Coastal Static",
+      name: "Train",
       stageZoneId: zoneIds["Second Stage"],
       entryZoneId: zoneIds["West Gate"],
       setTime: setTime(30),
       status: "arrived" as const,
     },
     {
-      name: "Nine Rivers",
+      name: "“Weird Al” Yankovic",
       stageZoneId: zoneIds["Main Stage"],
       entryZoneId: zoneIds["East Gate"],
       setTime: setTime(180),
       status: "not_arrived" as const,
     },
     {
-      name: "Marigold Radio",
+      name: "Lehigh Valley Openers",
       stageZoneId: zoneIds["Second Stage"],
       entryZoneId: zoneIds["Main Gate"],
       setTime: setTime(240),
