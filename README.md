@@ -1,87 +1,250 @@
-<h1 align="center">Cue</h1>
-<p align="center"><b>A festival operations platform with a voice agent, Arlo.</b><br/>
-One app for the ops team, the fans, and the show — all three talk to the same live data, all three talk to Arlo.</p>
+# Cue
 
-<p align="center"><b>Live:</b> https://cue-psi-snowy.vercel.app</p>
+**A live festival operations platform powered by Arlo, a context-aware voice agent.**
+
+Cue connects festival organizers, production teams, and attendees through one live data layer. Arlo understands who is asking, what part of the festival they are using, and what information they are allowed to access.
+
+**Live Demo:** https://cue-psi-snowy.vercel.app
 
 ---
 
-## The 30-second version
+## What Cue Does
 
-Festivals run on three groups who never see each other's information: the ops team tracking crowd flow and volunteer coverage, fans trying to find their favorite artist or the nearest restroom, and the production crew running a specific show's readiness and patch list. Cue puts all three in one app on top of one live Convex backend, with a voice agent — Arlo — who answers differently depending on who's asking and what page they're on.
+Festivals depend on multiple groups that usually work with disconnected information:
 
-Tap the mic, anywhere in the app, and talk. Ask ops "which zones need volunteers" and get real staffing numbers. Ask the fan guide "where's my favorite artist" and get a stage, a time, and directions. Say "the keyboard player is out" on the show console and watch the patch list rebuild and the readiness score recompute live, on every screen watching it.
+- Organizers monitor crowds, gates, volunteers, artists, and incidents.
+- Production teams manage show readiness, equipment, schedules, and crew tasks.
+- Fans need accurate schedules, directions, amenities, and real-time updates.
 
-## The three surfaces
+Cue brings these workflows together using Convex as a shared, reactive backend and Arlo as the voice interface.
 
-1. **Festival Ops** — a live venue map. Zones (gates, stages, backstage, green room, FOH, restrooms, food/drink) glow by real-time crowd density, flare red at critical, and flag themselves when understaffed. Click a zone to see detail and assign an available volunteer with one tap. Artist lineup with click-to-advance status.
-2. **Fan Guide** — today's lineup in plain language, restroom/food-drink locations, and an in-page Ask Arlo chat.
-3. **Show Console** — the original single-show production flow: a live readiness meter, the flagship "venue supports 16 of 20 required channels" conflict, the voice-cascade demo, a task board, crew presence.
+Tap the microphone and ask:
 
-A **floating voice widget** sits on top of all three, always visible, and follows you across tabs — its conversation history persists as you navigate because it's one component that's never unmounted, not a per-page reset.
+- **Arlo Crew:** “Which zones need more volunteers?”
+- **Arlo Fan:** “When should I leave for the next artist?”
+- **Show Operations:** “The keyboard player is unavailable. What needs to change?”
+
+Arlo responds using the live data already visible inside Cue.
+
+---
+
+## Product Experiences
+
+### Arlo Crew
+
+The private operations experience for organizers, stage managers, production teams, and authorized festival staff.
+
+Arlo Crew includes:
+
+- Live crowd-density monitoring
+- Gate and zone status
+- Volunteer allocation
+- Artist arrival and performance status
+- Show-readiness scoring
+- Production conflicts
+- Crew tasks and presence
+- Operational voice commands
+- Human approval for sensitive changes
+
+Organizers can ask questions such as:
+
+> “Which areas need attention right now?”
+
+> “Entrance A is crowded and the artist arrives in 15 minutes. What should we do?”
+
+> “Lighting rig two is not responding. Give me a recovery plan.”
+
+---
+
+### Arlo Fan
+
+The attendee-facing festival guide.
+
+Arlo Fan provides:
+
+- Artist schedules
+- Current and upcoming performances
+- Public artist-status updates
+- Food and drink locations
+- Restroom and water information
+- Crowd-aware guidance
+- Suggested departure times
+- Text and voice questions
+- Spoken Arlo responses
+
+Fans can ask:
+
+> “Where is the nearest water station?”
+
+> “Which route should I take to the next stage?”
+
+> “When should I arrive if I want to get closer to the front?”
+
+> “Is the artist delayed?”
+
+Arlo Fan does not expose backstage routes, crew tasks, security plans, production documents, or organizer controls.
+
+---
 
 ## Meet Arlo
 
-Arlo isn't a chatbot wedged into a corner — she's a real voice, everywhere in the app:
+Arlo is not a generic chatbot added to the side of the application. Arlo is a voice-first interface connected directly to Cue’s live data.
 
-- **Real microphone capture** (`MediaRecorder`), **real speech-to-text** (OpenAI Whisper), **a real spoken voice back** (OpenAI TTS, `nova` — warm and friendly), not a text box that happens to also talk.
-- **Built as a call, not a chat.** One big talk button that visibly moves through *listening → thinking → speaking*. Dedicated mute-mic and mute-Arlo's-voice controls. A stop button that actually stops — cancels a recording before it sends, or cuts Arlo off mid-sentence. Typing is available but tucked behind a "Type instead" toggle, because talking is the point.
-- **Context-aware by page.** The same floating mic answers completely differently depending where you are:
-  - *Festival Ops* → crowd density, understaffed zones, artist status — crew-facing, no fluff.
-  - *Fan Guide* → warm, lineup- and amenity-grounded answers for a fan.
-  - *Show Console* → the actual production cascade, including "the keyboard player is out."
-- **Remembers the conversation.** Recent turns on the current page feed back into the model as context, so a follow-up question makes sense without repeating yourself.
-- **Grounded, not hallucinated.** Every answer is built from live Convex data (the same zones, artists, and readiness numbers the screens show) — deterministic keyword matching handles the common cases with zero API cost; an LLM only fills in anything open-ended, using that same live data as its only source of truth.
+### Real voice interaction
 
-## Why this is a serious use of Convex
+Arlo supports:
 
-Cue treats Convex as the whole backend and its reactive engine — not a database sitting behind an API. The patterns that carry the product:
+- Browser microphone capture using `MediaRecorder`
+- Speech-to-text using OpenAI Whisper
+- Context-aware reasoning
+- Spoken responses using OpenAI text-to-speech
+- Listening, thinking, and speaking states
+- Mute and stop controls
+- Text input as a fallback
 
-1. **The agent runs inside Convex.** Arlo's reasoning lives in Convex `action`s (`transcribeAndRoute`, `askGuide`, `speak`, `detectConflicts`) that call OpenAI or apply a deterministic check, then hand off to `mutation`s that write state. Side effects live in actions, writes live in mutations — the canonical split. → [`convex/actions.ts`](convex/actions.ts), [`convex/fan.ts`](convex/fan.ts), [`convex/mutations.ts`](convex/mutations.ts)
-2. **The live experience is pure reactive queries — zero polling.** Every screen subscribes to a Convex query (`getReadiness`, `listIssues`, `listZoneStatus`, `listArtists`, `listPresence`) and re-renders when a mutation writes. Grep the client: there is no `setInterval` driving any read — the only one that exists is a presence *write* heartbeat, not a data poll. → [`convex/queries.ts`](convex/queries.ts), [`convex/backstage.ts`](convex/backstage.ts)
-3. **The world changes on its own via scheduled functions.** `convex/crons.ts` runs `simulateCrowdTick` every 5 seconds (the festival map genuinely moves without anyone touching it) and `pollJamBase` on an interval. → [`convex/crons.ts`](convex/crons.ts)
-4. **Multi-step cascades are Convex scheduling Convex.** `ingestJamBaseEvent` calls `ctx.scheduler.runAfter(0, internal.actions.detectConflicts, …)` — a chain of functions the client only ever watches the results of. → [`convex/mutations.ts`](convex/mutations.ts)
+### Context-aware responses
 
-Every function is validated end to end with `v.*`, the schema (`convex/schema.ts`) is typed with indexes for its real access patterns, and every external call (OpenAI, JamBase) is server-side inside an action with env-scoped secrets — nothing external is ever called from the client.
+Arlo responds differently depending on the active experience:
+
+- **Arlo Crew:** crowd conditions, staffing, artists, production risks, and operational actions
+- **Arlo Fan:** schedules, amenities, routes, public updates, and attendee guidance
+- **Show operations:** patch lists, readiness, schedules, tasks, and recovery workflows
+
+### Conversation memory
+
+Recent messages from the active experience are included as context, allowing users to ask follow-up questions without repeating the full situation.
+
+### Grounded answers
+
+Arlo uses live Convex data as its source of truth.
+
+Common requests use deterministic logic when possible. OpenAI reasoning is used for open-ended questions and summaries while remaining grounded in the same festival and production data.
+
+---
+
+## Example Production Scenario
+
+A show is scheduled with:
+
+- 20 required audio channels
+- A venue limit of 16 channels
+- A keyboard setup using four channels
+- A 45-minute performance plan
+
+The keyboard player becomes unavailable and the performance slot is reduced to 30 minutes.
+
+The production manager tells Arlo:
+
+> “The keyboard player is out, and our set is now 30 minutes. Are we ready?”
+
+Arlo can:
+
+1. Detect that the patch list is outdated
+2. Remove the unused keyboard channels
+3. Recalculate channel capacity
+4. Flag the outdated stage setup
+5. Identify the schedule conflict
+6. Propose a recovery plan
+7. Update the readiness score
+8. Synchronize approved changes across connected screens
+
+---
+
+## Safe Changes and Human Approval
+
+Every proposed production change includes a `fixClass`.
+
+### Safe
+
+Reversible changes with no artist-facing or financial impact.
+
+Examples:
+
+- Removing obsolete patch-list entries
+- Recalculating timing
+- Synchronizing approved data
+- Updating internal readiness status
+
+### Approval Required
+
+Changes affecting artists, personnel, cost, safety, or public communication.
+
+Examples:
+
+- Shortening a performance
+- Changing artist routes
+- Modifying personnel assignments
+- Sending festival-wide updates
+- Restricting or redirecting gate access
+
+The backend rejects approval-class changes when they are submitted through the safe-change workflow.
+
+---
+
+## Why Convex
+
+Cue uses Convex as both the backend and the real-time coordination engine.
+
+### Reactive data
+
+Every major screen subscribes directly to Convex queries.
+
+When a mutation changes crowd density, artist status, readiness, tasks, or production issues, connected interfaces update automatically without polling.
+
+### Actions and mutations
+
+External calls and reasoning happen inside Convex actions.
+
+Database writes happen inside Convex mutations.
+
+Examples include:
+
+- `transcribeAndRoute`
+- `askGuide`
+- `speak`
+- `detectConflicts`
+- `applySafeChange`
+- `assignVolunteer`
+- `updateArtistStatus`
+
+### Scheduled activity
+
+Convex scheduled functions and crons simulate or ingest live event changes.
+
+Examples:
+
+- Crowd-density updates
+- Artist and schedule updates
+- Conflict detection after an event change
+
+### Validation
+
+Convex functions use validated arguments and typed schemas. OpenAI and JamBase credentials remain server-side through Convex environment variables.
+
+---
 
 ## Architecture
 
-```
-OpenAI (Whisper STT / TTS / chat) ─┐
-JamBase (schedule/status, partial) ┤
-                                    ├─► Convex actions ──► Convex mutations ──► Convex tables
-Mic input (any page) ──────────────┘        │                    │                   │
-                                      reasoning / STT / TTS  transactional      reactive queries
-                                                                writes                  │
-                                                                                  every screen (live)
-```
-
-Convex holds the festival's live state (zones, crowd readings, artists, volunteers) and the show's production documents (rider, patch list, schedule, readiness, issues, tasks, presence, voice log). One backend, one source of truth, three surfaces reading and writing the same tables.
-
-## Tech stack
-- **Backend & realtime:** Convex — database, actions, mutations, reactive queries, scheduled functions, crons
-- **Agent:** OpenAI (`gpt-4o-mini` for reasoning/chat, `whisper-1` for speech-to-text, `tts-1` with the `nova` voice for speech-out). Flagship conflict detection (channel-capacity, schedule) is deterministic code, never LLM-gated — the readiness number stays trustworthy even with no API key configured.
-- **External data:** JamBase (festival schedule/artist data) — real data was pulled in as a one-time seed via JamBase's MCP server; live polling isn't wired up yet, see `HANDOFF.md`.
-- **Frontend:** React 18 + Vite + Tailwind v4, Convex React client, `MediaRecorder` for mic capture
-
-## Run it locally
-```bash
-cd cue
-npm install
-npx convex dev        # provisions/starts your Convex backend
-npm run dev            # in another terminal
-```
-Open **http://localhost:5173**. Everything seeds itself automatically on first load. Set `OPENAI_API_KEY` (and optionally `JAMBASE_API_KEY`) as Convex environment variables (`npx convex env set OPENAI_API_KEY ...`) to enable voice and the LLM fallback — without a key, deterministic checks and the scripted-command buttons still run the full demo, just without a spoken voice.
-
-## Safe vs. approval — the explicit boundary
-Every proposed change on the Show Console carries a `fixClass`: `safe` (reversible edits with no artist-facing or cost impact — auto-appliable) or `approval` (set length, personnel, anything with a cost implication — a human must approve). `applySafeChange` refuses to run on an approval-class issue; see [`convex/mutations.ts`](convex/mutations.ts).
-
-## What's built vs. what's next
-**Built:** the festival ops map with live simulated crowd density and volunteer allocation, the fan guide, the original show console, a real voice agent (mic → Whisper → grounded answer → TTS) available as a floating call-style widget on every page plus in-page chats, deployed to Vercel + Convex cloud.
-
-**Open threads** (full detail in `HANDOFF.md`): JamBase live polling isn't wired up (the MCP path works but isn't integrated into the cron; a one-time real-data seed was pulled via MCP); `convex/_generated/` is committed to git (cosmetic); no automated tests (explicit call); a real human hasn't been observed talking to Arlo through an actual live microphone yet, though the whole pipeline is proven with real synthesized audio.
-
-**Explicitly out of scope, by design:** mic plots, comms planning, pixel maps, PDF export, full document editors, multi-tenant auth, the other eight conflict types beyond channel-capacity and schedule.
-
-## Credits
-Cue's document layer takes its data model from ideas in the open-source live-production-docs ecosystem; no code from that project was copied into this repo. Everything in `convex/` and the Cue/Arlo product is original to this project.
+```text
+OpenAI Whisper / Chat / TTS ──────┐
+JamBase artist and event data ────┤
+Microphone or text input ─────────┘
+                                  │
+                                  ▼
+                          Convex Actions
+                     transcription and reasoning
+                                  │
+                                  ▼
+                         Convex Mutations
+                       transactional state updates
+                                  │
+                                  ▼
+                          Convex Database
+                                  │
+                                  ▼
+                         Reactive Queries
+                                  │
+                  ┌───────────────┴───────────────┐
+                  ▼                               ▼
+             Arlo Crew                        Arlo Fan
+       private operations data          public attendee guidance
