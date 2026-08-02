@@ -4,7 +4,7 @@ import { api } from "../convex/_generated/api";
 import type { Id } from "../convex/_generated/dataModel";
 import BackstageOps from "./BackstageOps";
 import FanGuide from "./FanGuide";
-import { useVoiceRecorder, playBase64Audio } from "./useVoiceRecorder";
+import { useVoiceRecorder, useSpeaker } from "./useVoiceRecorder";
 import GlobalVoiceWidget from "./GlobalVoiceWidget";
 
 function ReadinessMeter({ score }: { score: number | undefined }) {
@@ -197,6 +197,7 @@ function ShowConsole() {
   const updateTaskStatus = useMutation(api.mutations.updateTaskStatus);
   const heartbeat = useMutation(api.mutations.heartbeat);
   const { recording, start: startMic, stop: stopMic, error: micError } = useVoiceRecorder();
+  const arloSpeaker = useSpeaker();
 
   const [arloBusy, setArloBusy] = useState(false);
 
@@ -228,7 +229,7 @@ function ShowConsole() {
   const speakReply = async (text: string) => {
     try {
       const { audioBase64 } = await speak({ text });
-      if (audioBase64) playBase64Audio(audioBase64);
+      if (audioBase64) arloSpeaker.speak(audioBase64);
     } catch {
       // TTS is a nice-to-have; the text reply is already logged either way.
     }

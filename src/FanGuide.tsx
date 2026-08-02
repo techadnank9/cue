@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useAction, useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
-import { useVoiceRecorder, playBase64Audio } from "./useVoiceRecorder";
+import { useVoiceRecorder, useSpeaker } from "./useVoiceRecorder";
 
 const STATUS_LABEL: Record<string, string> = {
   not_arrived: "Coming up",
@@ -69,6 +69,7 @@ function ChatPanel({ festivalId }: { festivalId: any }) {
   const askGuide = useAction(api.fan.askGuide);
   const speak = useAction(api.actions.speak);
   const { recording, start, stop, error: micError } = useVoiceRecorder();
+  const speaker = useSpeaker();
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: "arlo",
@@ -86,7 +87,7 @@ function ChatPanel({ festivalId }: { festivalId: any }) {
   const speakReply = async (text: string) => {
     try {
       const { audioBase64 } = await speak({ text });
-      if (audioBase64) playBase64Audio(audioBase64);
+      if (audioBase64) speaker.speak(audioBase64);
     } catch {
       // TTS is a nice-to-have; the text answer already rendered.
     }
