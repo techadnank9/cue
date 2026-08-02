@@ -211,19 +211,24 @@ async function seed(ctx: any) {
     date: "2026-08-07",
   });
 
+  // Real GPS coordinates inside Golden Gate Park, San Francisco — the actual
+  // Outside Lands venue (jambase:15738826, venue center 37.7682, -122.4932
+  // per JamBase). Placed on real park meadows/landmarks JamBase doesn't
+  // itemize per-zone, so the venue and general layout are real; exact stage
+  // footprints within the park are a reasonable placement, not surveyed.
   const zoneDefs = [
-    { name: "Main Gate", kind: "entry" as const, x: 50, y: 84, capacity: 400 },
-    { name: "West Gate", kind: "entry" as const, x: 14, y: 66, capacity: 220 },
-    { name: "East Gate", kind: "entry" as const, x: 86, y: 66, capacity: 220 },
-    { name: "Main Stage", kind: "stage" as const, x: 50, y: 34, capacity: 600 },
-    { name: "Second Stage", kind: "stage" as const, x: 22, y: 26, capacity: 300 },
-    { name: "Backstage", kind: "backstage" as const, x: 78, y: 24, capacity: 80 },
-    { name: "Green Room", kind: "green_room" as const, x: 78, y: 12, capacity: 30 },
-    { name: "FOH / Mix", kind: "foh" as const, x: 50, y: 56, capacity: 25 },
-    { name: "Restrooms — North", kind: "restroom" as const, x: 34, y: 46, capacity: 40 },
-    { name: "Restrooms — South", kind: "restroom" as const, x: 66, y: 78, capacity: 40 },
-    { name: "Food Court", kind: "food_drink" as const, x: 14, y: 46, capacity: 150 },
-    { name: "Bar & Drinks", kind: "food_drink" as const, x: 86, y: 46, capacity: 100 },
+    { name: "Main Gate", kind: "entry" as const, x: 50, y: 84, lat: 37.7715, lng: -122.462, capacity: 400 },
+    { name: "West Gate", kind: "entry" as const, x: 14, y: 66, lat: 37.7699, lng: -122.5058, capacity: 220 },
+    { name: "East Gate", kind: "entry" as const, x: 86, y: 66, lat: 37.7716, lng: -122.46, capacity: 220 },
+    { name: "Main Stage", kind: "stage" as const, x: 50, y: 34, lat: 37.7676, lng: -122.4915, capacity: 600 },
+    { name: "Second Stage", kind: "stage" as const, x: 22, y: 26, lat: 37.7679, lng: -122.4875, capacity: 300 },
+    { name: "Backstage", kind: "backstage" as const, x: 78, y: 24, lat: 37.7699, lng: -122.4831, capacity: 80 },
+    { name: "Green Room", kind: "green_room" as const, x: 78, y: 12, lat: 37.7706, lng: -122.482, capacity: 30 },
+    { name: "FOH / Mix", kind: "foh" as const, x: 50, y: 56, lat: 37.7672, lng: -122.4905, capacity: 25 },
+    { name: "Restrooms — North", kind: "restroom" as const, x: 34, y: 46, lat: 37.769, lng: -122.485, capacity: 40 },
+    { name: "Restrooms — South", kind: "restroom" as const, x: 66, y: 78, lat: 37.766, lng: -122.487, capacity: 40 },
+    { name: "Food Court", kind: "food_drink" as const, x: 14, y: 46, lat: 37.7686, lng: -122.49, capacity: 150 },
+    { name: "Bar & Drinks", kind: "food_drink" as const, x: 86, y: 46, lat: 37.7715, lng: -122.468, capacity: 100 },
   ];
   const zoneIds: Record<string, Id<"zones">> = {};
   for (const z of zoneDefs) {
@@ -245,7 +250,9 @@ async function seed(ctx: any) {
   // 2026-08-07), pulled live via the JamBase MCP server (searchFestivals —
   // jambase:15738826, see convex/events.ts for the full real-event index).
   // JamBase's REST API isn't reachable from a deployed Convex action (see
-  // HANDOFF.md), so this lineup is a one-time real-data seed, not a live poll.
+  // HANDOFF.md), so this lineup is a one-time real-data seed, not a live
+  // poll. Only real JamBase headliners here — no filler/placeholder acts,
+  // even though that means fewer than 4 entries.
   const artistDefs = [
     {
       name: "Charli XCX",
@@ -266,13 +273,6 @@ async function seed(ctx: any) {
       stageZoneId: zoneIds["Main Stage"],
       entryZoneId: zoneIds["East Gate"],
       setTime: setTime(180),
-      status: "not_arrived" as const,
-    },
-    {
-      name: "Bay Area Openers",
-      stageZoneId: zoneIds["Second Stage"],
-      entryZoneId: zoneIds["Main Gate"],
-      setTime: setTime(240),
       status: "not_arrived" as const,
     },
   ];

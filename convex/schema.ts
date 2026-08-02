@@ -166,8 +166,12 @@ export default defineSchema({
       v.literal("restroom"),
       v.literal("food_drink")
     ),
-    x: v.number(), // 0-100, map position
+    x: v.number(), // 0-100, fallback map position when no real geo is set
     y: v.number(),
+    // Real GPS coordinates within the venue, when known — drives the real
+    // map view instead of the abstract grid.
+    lat: v.optional(v.number()),
+    lng: v.optional(v.number()),
     capacity: v.number(),
   }).index("by_festival", ["festivalId"]),
 

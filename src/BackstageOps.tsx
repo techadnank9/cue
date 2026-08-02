@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import type { Id } from "../convex/_generated/dataModel";
+import FestivalMapView from "./FestivalMapView";
 
 const LEVEL_COLOR: Record<string, string> = {
   low: "var(--cue-green)",
@@ -291,7 +292,11 @@ export default function BackstageOps() {
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-6">
-        <FestivalMap zones={zones} selected={activeZone?._id ?? null} onSelect={setSelectedZone} />
+        {zones.every((z) => z.lat != null && z.lng != null) ? (
+          <FestivalMapView zones={zones} selected={activeZone?._id ?? null} onSelect={setSelectedZone} />
+        ) : (
+          <FestivalMap zones={zones} selected={activeZone?._id ?? null} onSelect={setSelectedZone} />
+        )}
         {activeZone && (
           <ZoneDetail
             zone={activeZone}
