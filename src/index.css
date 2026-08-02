@@ -1,5 +1,19 @@
 @import "tailwindcss";
 
+/* Real map (Leaflet) zone labels: compact, dark, only shown for the
+   selected zone or on hover — 12 zones packed into one park make
+   permanent full-size labels overlap and bury the map. */
+.leaflet-tooltip.zone-tooltip {
+  background: rgba(26, 29, 34, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--gaff-silver, #fff7f3);
+  padding: 2px 6px;
+  border-radius: 6px;
+  box-shadow: none;
+}
+.leaflet-tooltip.zone-tooltip::before { display: none; }
+.leaflet-container { background: var(--stage-black); }
+
 :root {
   --stage-black: #243b3b;
   --console-graphite: #2d4948;

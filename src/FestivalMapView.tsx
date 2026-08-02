@@ -71,8 +71,14 @@ export default function FestivalMapView({
               }}
               eventHandlers={{ click: () => onSelect(zone._id) }}
             >
-              <Tooltip direction="top" offset={[0, -radius]} opacity={1} permanent>
-                <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 10, textTransform: "uppercase" }}>
+              <Tooltip
+                direction="top"
+                offset={[0, -radius]}
+                opacity={0.95}
+                permanent={isSelected}
+                className="zone-tooltip"
+              >
+                <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 10, textTransform: "uppercase", whiteSpace: "nowrap" }}>
                   {ZONE_ICON[zone.kind] ?? "●"} {zone.name}
                 </span>
               </Tooltip>
