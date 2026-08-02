@@ -108,24 +108,26 @@ function EventDetail({
             <span key={h} className="event-detail__pill">{h}</span>
           ))}
         </div>
-        <a
-          className="event-detail__link"
-          href={event.jambaseUrl}
-          target="_blank"
-          rel="noreferrer"
-        >
-          View real listing on JamBase ↗
-        </a>
-        {event.hasOpsExperience ? (
-          <BrandButton className="event-detail__cta" onClick={onEnterOps}>
-            Enter Cue for {event.name} <span aria-hidden="true">→</span>
-          </BrandButton>
-        ) : (
-          <p className="event-detail__soon">
-            The full Cue ops experience is live for Outside Lands first. Support for
-            {" " + event.name} is next.
-          </p>
-        )}
+        <div className="event-detail__footer">
+          <a
+            className="event-detail__link"
+            href={event.jambaseUrl}
+            target="_blank"
+            rel="noreferrer"
+          >
+            View real listing on JamBase ↗
+          </a>
+          {event.hasOpsExperience ? (
+            <BrandButton className="event-detail__cta" onClick={onEnterOps}>
+              Enter Cue for {event.name} <span aria-hidden="true">→</span>
+            </BrandButton>
+          ) : (
+            <p className="event-detail__soon">
+              The full Cue ops experience is live for Outside Lands first. Support for
+              {" " + event.name} is next.
+            </p>
+          )}
+        </div>
       </section>
     </main>
   );
