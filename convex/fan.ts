@@ -8,6 +8,7 @@
 import { action } from "./_generated/server";
 import { api } from "./_generated/api";
 import { v } from "convex/values";
+import { transcribeAudio } from "./openaiVoice";
 
 const FRIENDLY_STATUS: Record<string, string> = {
   not_arrived: "haven't arrived on site yet",
@@ -38,11 +39,26 @@ function formatTime(iso: string): string {
 }
 
 export const askGuide = action({
-  args: { festivalId: v.id("festivals"), question: v.string() },
-  handler: async (ctx, { festivalId, question }): Promise<{ answer: string }> => {
+  args: {
+    festivalId: v.id("festivals"),
+    question: v.optional(v.string()),
+    audio: v.optional(v.bytes()),
+  },
+  handler: async (ctx, { festivalId, question, audio }): Promise<{ answer: string; question: string }> => {
     const zones = await ctx.runQuery(api.backstage.listZoneStatus, { festivalId });
     const artists = await ctx.runQuery(api.backstage.listArtists, { festivalId });
-    const q = question.toLowerCase();
+
+    let questionText = question ?? "";
+    if (!questionText && audio) {
+      questionText = await transcribeAudio(audio);
+    }
+    if (!questionText.trim()) {
+      return {
+        question: "",
+        answer: "I didn't catch that — try asking again, or type your question.",
+      };
+    }
+    const q = questionText.toLowerCase();
 
     // 1. Artist lookup — "where's <artist>", "when is <artist> on".
     const matchedArtist = artists.find((a) =>
@@ -53,7 +69,7 @@ export const askGuide = action({
       const answer = `${matchedArtist.name} plays ${matchedArtist.stageName} at ${formatTime(
         matchedArtist.setTime
       )}. Right now they ${status}. Head in through ${matchedArtist.entryName} if you're coming from outside.`;
-      return { answer: withTip(answer, artists) };
+      return { question: questionText, answer: withTip(answer, artists) };
     }
 
     // 2. Restrooms.
@@ -63,7 +79,7 @@ export const askGuide = action({
         const list = restrooms
           .map((z) => `${z.name} (${nearestZoneLabel(z, zones)})`)
           .join(" and ");
-        return { answer: withTip(`Closest restrooms: ${list}.`, artists) };
+        return { question: questionText, answer: withTip(`Closest restrooms: ${list}.`, artists) };
       }
     }
 
@@ -72,7 +88,7 @@ export const askGuide = action({
       const spots = zones.filter((z) => z.kind === "food_drink");
       if (spots.length > 0) {
         const list = spots.map((z) => `${z.name} (${nearestZoneLabel(z, zones)})`).join(" and ");
-        return { answer: withTip(`Grab food or drinks at ${list}.`, artists) };
+        return { question: questionText, answer: withTip(`Grab food or drinks at ${list}.`, artists) };
       }
     }
 
@@ -81,7 +97,7 @@ export const askGuide = action({
       const list = artists
         .map((a) => `${a.name} — ${a.stageName} at ${formatTime(a.setTime)}`)
         .join(", ");
-      return { answer: `Today's lineup: ${list}.` };
+      return { question: questionText, answer: `Today's lineup: ${list}.` };
     }
 
     // 5. Navigation / "where should I go" / general layout.
@@ -93,7 +109,7 @@ export const askGuide = action({
       )}) and ${stages.length} stages (${stages.join(
         ", "
       )}). Restrooms and food/drink are marked on the map between the stages — check the Fan Guide map for the closest one to you.`;
-      return { answer: withTip(answer, artists) };
+      return { question: questionText, answer: withTip(answer, artists) };
     }
 
     // 6. Optional LLM fallback for anything open-ended.
@@ -124,13 +140,13 @@ export const askGuide = action({
                 content:
                   "You are Arlo, a friendly festival guide talking to a fan. Answer in 1-3 short sentences using only the festival data provided. Be warm and specific, and suggest one thing they might enjoy checking out if it fits naturally.",
               },
-              { role: "user", content: `Festival data: ${JSON.stringify(context)}\n\nFan question: ${question}` },
+              { role: "user", content: `Festival data: ${JSON.stringify(context)}\n\nFan question: ${questionText}` },
             ],
           }),
         });
         const data = await res.json();
         const text = data?.choices?.[0]?.message?.content?.trim();
-        if (text) return { answer: text };
+        if (text) return { question: questionText, answer: text };
       } catch (err) {
         console.error("askGuide LLM fallback failed", err);
       }
@@ -138,6 +154,7 @@ export const askGuide = action({
 
     // 7. Deterministic fallback.
     return {
+      question: questionText,
       answer:
         "I can help with the lineup, set times, restrooms, food & drink, or getting around — try asking where your favorite artist is playing, or where the nearest restroom is.",
     };

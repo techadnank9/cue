@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useAction, useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
+import { useVoiceRecorder, playBase64Audio } from "./useVoiceRecorder";
 
 const STATUS_LABEL: Record<string, string> = {
   not_arrived: "Coming up",
@@ -66,6 +67,8 @@ type ChatMessage = { role: "fan" | "arlo"; text: string };
 
 function ChatPanel({ festivalId }: { festivalId: any }) {
   const askGuide = useAction(api.fan.askGuide);
+  const speak = useAction(api.actions.speak);
+  const { recording, start, stop, error: micError } = useVoiceRecorder();
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: "arlo",
@@ -80,6 +83,15 @@ function ChatPanel({ festivalId }: { festivalId: any }) {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
+  const speakReply = async (text: string) => {
+    try {
+      const { audioBase64 } = await speak({ text });
+      if (audioBase64) playBase64Audio(audioBase64);
+    } catch {
+      // TTS is a nice-to-have; the text answer already rendered.
+    }
+  };
+
   const send = async (text: string) => {
     if (!text.trim() || busy) return;
     setMessages((m) => [...m, { role: "fan", text }]);
@@ -88,8 +100,30 @@ function ChatPanel({ festivalId }: { festivalId: any }) {
     try {
       const { answer } = await askGuide({ festivalId, question: text });
       setMessages((m) => [...m, { role: "arlo", text: answer }]);
+      void speakReply(answer);
     } finally {
       setBusy(false);
+    }
+  };
+
+  const sendAudio = async (audio: ArrayBuffer) => {
+    setBusy(true);
+    try {
+      const { answer, question } = await askGuide({ festivalId, audio });
+      if (question) setMessages((m) => [...m, { role: "fan", text: question }]);
+      setMessages((m) => [...m, { role: "arlo", text: answer }]);
+      void speakReply(answer);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const toggleMic = async () => {
+    if (recording) {
+      const audio = await stop();
+      if (audio) await sendAudio(audio);
+    } else {
+      await start();
     }
   };
 
@@ -150,6 +184,21 @@ function ChatPanel({ festivalId }: { festivalId: any }) {
           className="flex-1 rounded-lg bg-black/30 border border-white/10 px-4 py-2.5 text-sm text-[var(--gaff-silver)] placeholder:text-[var(--gaff-silver)]/40 focus:outline-none"
         />
         <button
+          type="button"
+          onClick={toggleMic}
+          disabled={busy}
+          title={recording ? "Stop and ask" : "Ask by voice"}
+          className={`rounded-lg px-3 py-2.5 text-sm font-medium disabled:opacity-50 ${
+            recording ? "meter-breathe" : ""
+          }`}
+          style={{
+            background: recording ? "var(--fault-red)" : "rgba(255,255,255,0.08)",
+            color: recording ? "var(--stage-black)" : "var(--gaff-silver)",
+          }}
+        >
+          {recording ? "● Listening…" : "🎙"}
+        </button>
+        <button
           type="submit"
           disabled={busy}
           className="rounded-lg px-4 py-2.5 text-sm font-medium disabled:opacity-50"
@@ -158,6 +207,9 @@ function ChatPanel({ festivalId }: { festivalId: any }) {
           Send
         </button>
       </form>
+      {micError && (
+        <div className="text-xs text-[var(--fault-red)]">{micError}</div>
+      )}
     </div>
   );
 }

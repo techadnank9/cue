@@ -13,6 +13,7 @@ import type * as backstage from "../backstage.js";
 import type * as crons from "../crons.js";
 import type * as fan from "../fan.js";
 import type * as mutations from "../mutations.js";
+import type * as openaiVoice from "../openaiVoice.js";
 import type * as queries from "../queries.js";
 
 import type {
@@ -27,6 +28,7 @@ declare const fullApi: ApiFromModules<{
   crons: typeof crons;
   fan: typeof fan;
   mutations: typeof mutations;
+  openaiVoice: typeof openaiVoice;
   queries: typeof queries;
 }>;
 

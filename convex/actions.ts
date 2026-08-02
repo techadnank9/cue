@@ -5,6 +5,7 @@
 import { internalAction, action } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
+import { transcribeAudio, synthesizeSpeech } from "./openaiVoice";
 
 // Detect conflicts. The deterministic channel-capacity check runs in
 // checkChannelCapacity (trustworthy for the flagship case); this action adds
@@ -114,26 +115,7 @@ export const transcribeAndRoute = action({
     let text = command ?? "";
 
     if (!text && audio) {
-      const apiKey = process.env.OPENAI_API_KEY;
-      if (apiKey) {
-        try {
-          const form = new FormData();
-          form.append("file", new Blob([audio]), "command.webm");
-          form.append("model", "whisper-1");
-          const res = await fetch(
-            "https://api.openai.com/v1/audio/transcriptions",
-            {
-              method: "POST",
-              headers: { Authorization: `Bearer ${apiKey}` },
-              body: form,
-            }
-          );
-          const data = await res.json();
-          text = data?.text ?? "";
-        } catch (err) {
-          console.error("transcribe failed", err);
-        }
-      }
+      text = await transcribeAudio(audio);
     }
 
     const lower = text.toLowerCase();
@@ -173,5 +155,15 @@ export const transcribeAndRoute = action({
       text: reply,
     });
     return { reply, text };
+  },
+});
+
+// Text-to-speech for Arlo's spoken replies. Returns a base64 mp3, or null if
+// no OPENAI_API_KEY is configured — callers fall back to text-only silently.
+export const speak = action({
+  args: { text: v.string() },
+  handler: async (_ctx, { text }): Promise<{ audioBase64: string | null }> => {
+    const audioBase64 = await synthesizeSpeech(text);
+    return { audioBase64 };
   },
 });

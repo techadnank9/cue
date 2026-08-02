@@ -4,6 +4,7 @@ import { api } from "../convex/_generated/api";
 import type { Id } from "../convex/_generated/dataModel";
 import BackstageOps from "./BackstageOps";
 import FanGuide from "./FanGuide";
+import { useVoiceRecorder, playBase64Audio } from "./useVoiceRecorder";
 
 function ReadinessMeter({ score }: { score: number | undefined }) {
   const [display, setDisplay] = useState(score ?? 0);
@@ -190,9 +191,11 @@ function ShowConsole() {
   const resetDemo = useMutation(api.mutations.resetDemo);
   const applySafeChange = useMutation(api.mutations.applySafeChange);
   const transcribeAndRoute = useAction(api.actions.transcribeAndRoute);
+  const speak = useAction(api.actions.speak);
   const simulateJamBase = useMutation(api.mutations.simulateJamBaseShortened);
   const updateTaskStatus = useMutation(api.mutations.updateTaskStatus);
   const heartbeat = useMutation(api.mutations.heartbeat);
+  const { recording, start: startMic, stop: stopMic, error: micError } = useVoiceRecorder();
 
   const [arloBusy, setArloBusy] = useState(false);
 
@@ -221,13 +224,44 @@ function ShowConsole() {
     );
   }
 
+  const speakReply = async (text: string) => {
+    try {
+      const { audioBase64 } = await speak({ text });
+      if (audioBase64) playBase64Audio(audioBase64);
+    } catch {
+      // TTS is a nice-to-have; the text reply is already logged either way.
+    }
+  };
+
   const runKeyboardOut = async () => {
     if (!showId) return;
     setArloBusy(true);
     try {
-      await transcribeAndRoute({ showId, command: "the keyboard player is out" });
+      const { reply } = await transcribeAndRoute({
+        showId,
+        command: "the keyboard player is out",
+      });
+      void speakReply(reply);
     } finally {
       setArloBusy(false);
+    }
+  };
+
+  const toggleMic = async () => {
+    if (!showId) return;
+    if (recording) {
+      setArloBusy(true);
+      try {
+        const audio = await stopMic();
+        if (audio) {
+          const { reply } = await transcribeAndRoute({ showId, audio });
+          void speakReply(reply);
+        }
+      } finally {
+        setArloBusy(false);
+      }
+    } else {
+      await startMic();
     }
   };
 
@@ -276,6 +310,19 @@ function ShowConsole() {
         </h2>
         <div className="flex flex-col sm:flex-row gap-3">
           <button
+            onClick={toggleMic}
+            disabled={arloBusy && !recording}
+            className={`rounded-lg px-4 py-3 font-medium disabled:opacity-50 ${
+              recording ? "meter-breathe" : ""
+            }`}
+            style={{
+              background: recording ? "var(--fault-red)" : "rgba(255,255,255,0.08)",
+              color: recording ? "var(--stage-black)" : "var(--gaff-silver)",
+            }}
+          >
+            {recording ? "● Listening… tap to send" : "🎙 Talk to Arlo"}
+          </button>
+          <button
             onClick={runKeyboardOut}
             disabled={arloBusy}
             className="flex-1 rounded-lg px-4 py-3 font-medium disabled:opacity-50"
@@ -290,6 +337,9 @@ function ShowConsole() {
             Simulate: JamBase set shortened
           </button>
         </div>
+        {micError && (
+          <div className="mt-2 text-xs text-[var(--fault-red)]">{micError}</div>
+        )}
         <div className="mt-4 flex flex-col gap-2 max-h-56 overflow-y-auto">
           {(voiceLog ?? []).map((entry: any) => (
             <div key={entry._id} className="text-sm">

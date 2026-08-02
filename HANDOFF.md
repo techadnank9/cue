@@ -126,27 +126,56 @@ URL:
 - Deployed and reachable at https://cue-psi-snowy.vercel.app, reading from
   the live Convex cloud deployment.
 
+## Real voice — done
+
+Implemented and verified end-to-end against the live cloud deployment (not
+just typechecked):
+
+- `convex/openaiVoice.ts` — shared `transcribeAudio` (Whisper) and
+  `synthesizeSpeech` (TTS, `tts-1`, base64 mp3 out) helpers, server-only,
+  used from both `convex/actions.ts` and `convex/fan.ts`.
+- `convex/actions.ts` — `transcribeAndRoute` now uses the shared helper;
+  added a `speak` action (text → base64 mp3).
+- `convex/fan.ts` — `askGuide` now accepts optional `audio: v.bytes()` as an
+  alternative to `question: v.string()`; transcribes first if audio is given.
+- `src/useVoiceRecorder.ts` — a shared `useVoiceRecorder()` hook
+  (MediaRecorder-based mic capture, resolves an `ArrayBuffer` on stop) and
+  `playBase64Audio()` for TTS playback.
+- Wired into both **Fan Guide**'s chat panel (🎙 button next to the text
+  input) and **Show Console**'s Arlo panel ("🎙 Talk to Arlo" button,
+  alongside the existing scripted "Simulate: keyboard player out"). Every
+  Arlo reply in both places now plays back as speech via `speak`.
+- **Verified with real audio**, not mocked: synthesized a real "the keyboard
+  player is out" mp3 via OpenAI TTS, sent it through `transcribeAndRoute` via
+  a real Convex client (not the CLI — `v.bytes()` args don't take plain
+  base64 through `npx convex run`, had to use `ConvexHttpClient` with an
+  actual `ArrayBuffer`), got back the correct transcription *and* the correct
+  cascade result (20→17 channels). Same test against `fan:askGuide` with a
+  "where's the nearest restroom" audio clip returned the correct grounded
+  answer. `speak` confirmed returning real mp3 bytes.
+- Browser mic permission itself is **not** testable headlessly (headless
+  Chrome can't grant real mic access) — confirmed the buttons render with no
+  console errors, but an actual human clicking "🎙 Talk to Arlo" or the Fan
+  Guide mic and speaking out loud has not been observed by me. If it doesn't
+  work, start there: mic permission prompt, `MediaRecorder` mime type support
+  in the browser being used, HTTPS/localhost requirement (satisfied on both
+  Vercel prod and localhost).
+
 ## What's NOT done / open threads
 
 1. **JamBase real integration** — see above, unresolved.
-2. **Real voice** — no mic capture or TTS anywhere. The Show Console's Arlo
-   "voice cascade" is triggered by a button passing a hardcoded text string
-   into `transcribeAndRoute`, not actual speech. Fan Guide chat is text-only.
-   `convex/actions.ts` has Whisper-shaped code behind an `if (apiKey)` guard
-   but it's never been exercised (no `audio` bytes have ever been sent to
-   it).
-3. **`convex/_generated/` is committed to git** — normally gitignored build
+2. **`convex/_generated/` is committed to git** — normally gitignored build
    output, got committed in the initial commit because `.gitignore` didn't
    exclude it at the time. Harmless (regenerates automatically) but worth a
    cleanup commit if it bothers you.
-4. **No automated tests** — explicit instruction from the user early on
+3. **No automated tests** — explicit instruction from the user early on
    ("do not write test case... run it fast"). Nothing to pick up here unless
    the user asks for tests now.
-5. **Crowd data has been drifting unattended** — the cron has been running
+4. **Crowd data has been drifting unattended** — the cron has been running
    continuously since the cloud deployment was linked, so zones may show
    wildly overcrowded numbers by the time anyone looks. Hit "Reset demo" in
    Festival Ops before demoing.
-6. **Explicitly out of scope per the original brief** (never attempted, by
+5. **Explicitly out of scope per the original brief** (never attempted, by
    design, not a gap): mic plots, comms planner, pixel maps, PDF export,
    multi-tenant auth, the other eight conflict types beyond
    channel-capacity/schedule.
