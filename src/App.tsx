@@ -5,6 +5,7 @@ import type { Id } from "../convex/_generated/dataModel";
 import BackstageOps from "./BackstageOps";
 import FanGuide from "./FanGuide";
 import { useVoiceRecorder, playBase64Audio } from "./useVoiceRecorder";
+import GlobalVoiceWidget from "./GlobalVoiceWidget";
 
 function ReadinessMeter({ score }: { score: number | undefined }) {
   const [display, setDisplay] = useState(score ?? 0);
@@ -406,6 +407,7 @@ function App() {
         </div>
       </div>
       {tab === "ops" ? <BackstageOps /> : tab === "fan" ? <FanGuide /> : <ShowConsole />}
+      <GlobalVoiceWidget activeTab={tab} />
     </div>
   );
 }

@@ -43,8 +43,19 @@ export const askGuide = action({
     festivalId: v.id("festivals"),
     question: v.optional(v.string()),
     audio: v.optional(v.bytes()),
+    // "fan" (default) keeps replies warm/simple; "ops" also surfaces
+    // volunteer coverage and crowd-density detail meant for crew, not fans.
+    mode: v.optional(v.union(v.literal("fan"), v.literal("ops"))),
+    // Prior turns from the SAME floating widget session, so the LLM
+    // fallback (step 6) has conversational context across questions.
+    history: v.optional(
+      v.array(v.object({ role: v.union(v.literal("user"), v.literal("arlo")), text: v.string() }))
+    ),
   },
-  handler: async (ctx, { festivalId, question, audio }): Promise<{ answer: string; question: string }> => {
+  handler: async (
+    ctx,
+    { festivalId, question, audio, mode, history }
+  ): Promise<{ answer: string; question: string }> => {
     const zones = await ctx.runQuery(api.backstage.listZoneStatus, { festivalId });
     const artists = await ctx.runQuery(api.backstage.listArtists, { festivalId });
 
@@ -112,12 +123,47 @@ export const askGuide = action({
       return { question: questionText, answer: withTip(answer, artists) };
     }
 
+    // 5b. Ops-only: volunteer coverage and crowd density. Gated on
+    // mode==="ops" so a fan asking "where's it busy" doesn't get pulled
+    // into staffing detail meant for crew.
+    if (mode === "ops") {
+      if (/(volunteer|understaff|need help|short.?staffed)/.test(q)) {
+        const short = zones.filter((z) => z.understaffed);
+        const answer =
+          short.length === 0
+            ? "Every zone is covered — no open volunteer needs right now."
+            : `${short.length} zone${short.length === 1 ? "" : "s"} need volunteers: ${short
+                .map((z) => `${z.name} (${z.assignedVolunteers}/${z.neededVolunteers})`)
+                .join(", ")}.`;
+        return { question: questionText, answer };
+      }
+      if (/(busiest|crowded|capacity|density|how full|hot ?spot)/.test(q)) {
+        const top = [...zones].sort((a, b) => b.ratio - a.ratio).slice(0, 3);
+        const answer = `Busiest right now: ${top
+          .map((z) => `${z.name} at ${Math.round(z.ratio * 100)}% (${z.count}/${z.capacity}, ${z.level})`)
+          .join(", ")}.`;
+        return { question: questionText, answer };
+      }
+    }
+
     // 6. Optional LLM fallback for anything open-ended.
     const apiKey = process.env.OPENAI_API_KEY;
     if (apiKey) {
       try {
         const context = {
-          zones: zones.map((z) => ({ name: z.name, kind: z.kind })),
+          zones: zones.map((z) => ({
+            name: z.name,
+            kind: z.kind,
+            ...(mode === "ops"
+              ? {
+                  count: z.count,
+                  capacity: z.capacity,
+                  level: z.level,
+                  assignedVolunteers: z.assignedVolunteers,
+                  neededVolunteers: z.neededVolunteers,
+                }
+              : {}),
+          })),
           artists: artists.map((a) => ({
             name: a.name,
             stage: a.stageName,
@@ -125,6 +171,14 @@ export const askGuide = action({
             status: a.status,
           })),
         };
+        const systemPrompt =
+          mode === "ops"
+            ? "You are Arlo, a backstage ops assistant talking to festival crew or volunteers. Answer in 1-3 short, direct sentences using only the data provided — crowd density, volunteer coverage, artist status. No fan-facing fluff, this is for people working the event."
+            : "You are Arlo, a friendly festival guide talking to a fan. Answer in 1-3 short sentences using only the festival data provided. Be warm and specific, and suggest one thing they might enjoy checking out if it fits naturally.";
+        const priorTurns = (history ?? []).slice(-6).map((h) => ({
+          role: h.role === "user" ? ("user" as const) : ("assistant" as const),
+          content: h.text,
+        }));
         const res = await fetch("https://api.openai.com/v1/chat/completions", {
           method: "POST",
           headers: {
@@ -135,12 +189,13 @@ export const askGuide = action({
             model: "gpt-4o-mini",
             temperature: 0.4,
             messages: [
+              { role: "system", content: systemPrompt },
               {
                 role: "system",
-                content:
-                  "You are Arlo, a friendly festival guide talking to a fan. Answer in 1-3 short sentences using only the festival data provided. Be warm and specific, and suggest one thing they might enjoy checking out if it fits naturally.",
+                content: `Live festival data: ${JSON.stringify(context)}`,
               },
-              { role: "user", content: `Festival data: ${JSON.stringify(context)}\n\nFan question: ${questionText}` },
+              ...priorTurns,
+              { role: "user", content: questionText },
             ],
           }),
         });

@@ -28,6 +28,23 @@ grown into three separate surfaces in one app:
    ("keyboard player is out"), a JamBase-shaped external trigger button, task
    board, crew presence. Kept intact, not deleted, just demoted to a tab.
 
+There's also a **floating global voice widget** (`src/GlobalVoiceWidget.tsx`),
+mounted once in `App.tsx` outside the tab switch so it's on screen on every
+tab and its conversation history survives switching tabs (it's the same
+mounted component, never unmounts). Anyone — ops crew, volunteers, or a fan —
+can tap the 🎙 in the bottom-right corner and ask anything; it answers
+differently depending on which tab is active:
+- **Festival Ops** → `fan:askGuide` with `mode: "ops"` — crowd density,
+  understaffed zones, artist status (crew-facing, no fan fluff).
+- **Fan Guide** → `fan:askGuide` with `mode: "fan"` — same grounded Q&A as
+  the in-page chat.
+- **Show Console** → `actions:transcribeAndRoute` — same cascade-or-status
+  logic as the in-page Arlo panel, including the "keyboard player is out"
+  intent.
+Every reply plays back as speech via `actions:speak`. The last 6 turns *for
+the current page* get passed back into the LLM fallback as conversation
+context on each ask, so follow-up questions on the same page stay coherent.
+
 All three tabs are switched via `App.tsx`'s top nav. Everything is Convex:
 reactive queries for all reads, mutations for all writes, actions for the
 only two external calls (OpenAI, and an unused JamBase fetch), a cron for
