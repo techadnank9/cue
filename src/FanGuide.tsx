@@ -65,6 +65,10 @@ function AmenityChip({ zone }: { zone: any }) {
 
 type ChatMessage = { role: "fan" | "arlo"; text: string };
 
+function publicAnswer(text: string) {
+  return text.replaceAll("Fan Guide", "Arlo Fan");
+}
+
 function ChatPanel({ festivalId }: { festivalId: any }) {
   const askGuide = useAction(api.fan.askGuide);
   const speak = useAction(api.actions.speak);
@@ -99,8 +103,9 @@ function ChatPanel({ festivalId }: { festivalId: any }) {
     setBusy(true);
     try {
       const { answer } = await askGuide({ festivalId, question: text });
-      setMessages((m) => [...m, { role: "arlo", text: answer }]);
-      void speakReply(answer);
+      const visibleAnswer = publicAnswer(answer);
+      setMessages((m) => [...m, { role: "arlo", text: visibleAnswer }]);
+      void speakReply(visibleAnswer);
     } finally {
       setBusy(false);
     }
@@ -111,8 +116,9 @@ function ChatPanel({ festivalId }: { festivalId: any }) {
     try {
       const { answer, question } = await askGuide({ festivalId, audio });
       if (question) setMessages((m) => [...m, { role: "fan", text: question }]);
-      setMessages((m) => [...m, { role: "arlo", text: answer }]);
-      void speakReply(answer);
+      const visibleAnswer = publicAnswer(answer);
+      setMessages((m) => [...m, { role: "arlo", text: visibleAnswer }]);
+      void speakReply(visibleAnswer);
     } finally {
       setBusy(false);
     }
@@ -222,8 +228,8 @@ export default function FanGuide() {
 
   if (!festival || !artists || !zones) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-[var(--gaff-silver)]/60 font-mono-console">
-        Loading the fan guide…
+      <div className="loading-state">
+        Loading Arlo Fan…
       </div>
     );
   }
@@ -232,15 +238,13 @@ export default function FanGuide() {
   const foodDrink = zones.filter((z) => z.kind === "food_drink");
 
   return (
-    <div className="min-h-screen max-w-3xl mx-auto px-5 py-8 flex flex-col gap-6">
-      <header>
-        <div className="text-xs uppercase tracking-[0.3em] text-[var(--house-amber)] font-mono-console">
-          Fan Guide
+    <main className="fan-experience">
+      <header className="fan-hero">
+        <div className="eyebrow">
+          Live now
         </div>
-        <h1 className="font-display text-3xl text-[var(--gaff-silver)]">{festival.name}</h1>
-        <div className="text-sm text-[var(--gaff-silver)]/60">
-          Everything happening today, and Arlo to help you find it.
-        </div>
+        <h1>{festival.name}</h1>
+        <p>Your day, made easy. Ask Arlo what’s on and where to go next.</p>
       </header>
 
       <ChatPanel festivalId={festivalId} />
@@ -277,6 +281,6 @@ export default function FanGuide() {
           ))}
         </div>
       </section>
-    </div>
+    </main>
   );
 }

@@ -259,8 +259,8 @@ export default function BackstageOps() {
 
   if (festival === undefined || festival === null || !zones || !artists || !volunteers) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-[var(--gaff-silver)]/60 font-mono-console">
-        Loading backstage…
+      <div className="loading-state">
+        Loading festival operations…
       </div>
     );
   }
@@ -270,21 +270,21 @@ export default function BackstageOps() {
   const availableVolunteers = volunteers.filter((v) => v.status === "available").length;
 
   return (
-    <div className="min-h-screen max-w-5xl mx-auto px-5 py-8 flex flex-col gap-6">
-      <header className="flex items-start justify-between gap-4">
+    <div className="crew-overview">
+      <header className="screen-heading">
         <div>
-          <div className="text-xs uppercase tracking-[0.3em] text-[var(--house-amber)] font-mono-console">
-            Cue · Backstage Ops
+          <div className="eyebrow">
+            Festival overview
           </div>
-          <h1 className="font-display text-2xl text-[var(--gaff-silver)]">{festival.name}</h1>
-          <div className="text-sm text-[var(--gaff-silver)]/60">
+          <h2>{festival.name}</h2>
+          <div className="muted-copy">
             {zones.length} zones · {understaffedCount} need volunteers · {availableVolunteers}{" "}
             available
           </div>
         </div>
         <button
           onClick={() => resetFestival()}
-          className="text-xs uppercase tracking-wider font-mono-console text-[var(--gaff-silver)]/50 border border-white/10 rounded-md px-3 py-2 hover:text-[var(--gaff-silver)] shrink-0"
+          className="quiet-button"
         >
           Reset demo
         </button>
