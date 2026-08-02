@@ -200,4 +200,27 @@ export default defineSchema({
     zoneId: v.optional(v.id("zones")),
     status: v.union(v.literal("available"), v.literal("assigned")),
   }).index("by_festival", ["festivalId"]),
+
+  // ---------- Real-world events index ----------
+  // A snapshot of real festivals pulled from the JamBase MCP server (agent
+  // session only — not callable from a deployed Convex function, see
+  // HANDOFF.md). Refreshed manually by re-running the seed with fresh MCP
+  // results; not a live poll. Drives the "choose an event" queue screen.
+
+  festivalEvents: defineTable({
+    jambaseId: v.string(),
+    name: v.string(),
+    startDate: v.string(), // ISO date
+    venueName: v.string(),
+    city: v.string(),
+    region: v.optional(v.string()),
+    country: v.string(),
+    latitude: v.number(),
+    longitude: v.number(),
+    headliners: v.array(v.string()),
+    jambaseUrl: v.string(),
+    heroImage: v.optional(v.string()),
+    // The one event with a full ops experience wired up (Festival Ops seed).
+    hasOpsExperience: v.boolean(),
+  }).index("by_jambaseId", ["jambaseId"]),
 });

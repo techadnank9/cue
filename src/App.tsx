@@ -5,8 +5,9 @@ import CueLogo from "./components/CueLogo";
 import ArloCrew from "./screens/ArloCrew";
 import IntroSequence from "./screens/IntroSequence";
 import RoleSelection from "./screens/RoleSelection";
+import EventsQueue from "./screens/EventsQueue";
 
-type View = "intro" | "roles" | "crew" | "fan";
+type View = "intro" | "events" | "roles" | "crew" | "fan";
 
 function ArloFan({ onSwitch }: { onSwitch: () => void }) {
   return (
@@ -34,7 +35,11 @@ export default function App() {
   const [view, setView] = useState<View>("intro");
 
   if (view === "intro") {
-    return <IntroSequence onComplete={() => setView("roles")} />;
+    return <IntroSequence onComplete={() => setView("events")} />;
+  }
+
+  if (view === "events") {
+    return <EventsQueue onEnterOps={() => setView("roles")} />;
   }
 
   if (view === "roles") {

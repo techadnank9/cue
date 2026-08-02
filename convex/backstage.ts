@@ -207,8 +207,8 @@ async function seed(ctx: any) {
   }
 
   const festivalId = await ctx.db.insert("festivals", {
-    name: "Musikfest — Bethlehem, PA",
-    date: "2026-07-31",
+    name: "Outside Lands — Golden Gate Park, SF",
+    date: "2026-08-07",
   });
 
   const zoneDefs = [
@@ -241,35 +241,35 @@ async function seed(ctx: any) {
   const setTime = (offsetMin: number) =>
     new Date(now.getTime() + offsetMin * 60_000).toISOString();
 
-  // Real headliners for Musikfest 2026 (Wind Creek Steel Stage at PNC Plaza,
-  // Bethlehem PA, 2026-07-31), pulled live via the JamBase MCP server
-  // (searchFestivals / getEvent — jambase:16253409). JamBase's REST API isn't
-  // reachable from a deployed Convex action (see HANDOFF.md), so this lineup
-  // is a one-time real-data seed rather than a live poll.
+  // Real headliners for Outside Lands 2026 (Golden Gate Park, San Francisco,
+  // 2026-08-07), pulled live via the JamBase MCP server (searchFestivals —
+  // jambase:15738826, see convex/events.ts for the full real-event index).
+  // JamBase's REST API isn't reachable from a deployed Convex action (see
+  // HANDOFF.md), so this lineup is a one-time real-data seed, not a live poll.
   const artistDefs = [
     {
-      name: "Third Eye Blind",
+      name: "Charli XCX",
       stageZoneId: zoneIds["Main Stage"],
       entryZoneId: zoneIds["Main Gate"],
       setTime: setTime(90),
       status: "soundcheck" as const,
     },
     {
-      name: "Train",
+      name: "The Strokes",
       stageZoneId: zoneIds["Second Stage"],
       entryZoneId: zoneIds["West Gate"],
       setTime: setTime(30),
       status: "arrived" as const,
     },
     {
-      name: "“Weird Al” Yankovic",
+      name: "RÜFÜS DU SOL",
       stageZoneId: zoneIds["Main Stage"],
       entryZoneId: zoneIds["East Gate"],
       setTime: setTime(180),
       status: "not_arrived" as const,
     },
     {
-      name: "Lehigh Valley Openers",
+      name: "Bay Area Openers",
       stageZoneId: zoneIds["Second Stage"],
       entryZoneId: zoneIds["Main Gate"],
       setTime: setTime(240),

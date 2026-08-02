@@ -11,6 +11,7 @@
 import type * as actions from "../actions.js";
 import type * as backstage from "../backstage.js";
 import type * as crons from "../crons.js";
+import type * as events from "../events.js";
 import type * as fan from "../fan.js";
 import type * as mutations from "../mutations.js";
 import type * as openaiVoice from "../openaiVoice.js";
@@ -26,6 +27,7 @@ declare const fullApi: ApiFromModules<{
   actions: typeof actions;
   backstage: typeof backstage;
   crons: typeof crons;
+  events: typeof events;
   fan: typeof fan;
   mutations: typeof mutations;
   openaiVoice: typeof openaiVoice;

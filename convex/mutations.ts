@@ -341,9 +341,11 @@ export const removeKeyboardPlayer = internalMutation({
 // ---------- Seed / reset (keeps the demo bulletproof) ----------
 
 // Real headliner + venue pulled via the JamBase MCP server (Musikfest 2026,
-// Wind Creek Steel Stage at PNC Plaza, jambase:16253409 — see
-// convex/backstage.ts, same event as the Festival Ops seed) so Show Console
-// and Festival Ops describe the same real show instead of two fake ones.
+// Wind Creek Steel Stage at PNC Plaza, jambase:16253409). Festival Ops now
+// points at a different real event (Outside Lands, SF — see
+// convex/backstage.ts and convex/events.ts) since it needs a full band with
+// a keyboardist for the channel-capacity/voice-cascade demo; Musikfest's
+// Third Eye Blind fits that shape. Both are real shows, just not the same one.
 const SEED_SHOW = {
   name: "Musikfest — Wind Creek Steel Stage, Saturday",
   artist: "Third Eye Blind",
